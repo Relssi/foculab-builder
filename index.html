@@ -1705,7 +1705,7 @@ SLIDES deve ser numero de 5 a 10`;
 
     // Tenta formato template === IDEIA_N ===
     for(let i = 1; i <= 10; i++) {
-      const block = raw.match(new RegExp(`=== IDEIA_${i} ===[\s\S]*?=== FIM_${i} ===`))?.[0] || '';
+      const block = raw.match(new RegExp(`=== IDEIA_${i} ===[\s\S]*?(?==== IDEIA_|$)`))?.[0] || '';
       if(!block) continue;
       const getL = (key) => block.match(new RegExp(`^${key}:\s*(.+)$`,'m'))?.[1]?.trim() || '';
       const pot = parseInt(getL('POTENCIAL')) || 3;
