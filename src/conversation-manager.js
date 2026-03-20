@@ -9,7 +9,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const whatsappApi = require('./whatsapp-api');
+const whatsappApi = require('./whatsapp-adapter');
 const aiAgent = require('./ai-agent');
 
 // ─── Estado global ────────────────────────────────────────────────────────────

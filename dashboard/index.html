@@ -857,6 +857,62 @@ function stageLabel(s) {
 
 // ── Init ─────────────────────────────────────────────────
 connectWS();
+
+// ─── WhatsApp Web QR Code ─────────────────────────────────────────────────────
+(function() {
+  let qrInterval = null;
+
+  async function checkQR() {
+    try {
+      const res = await fetch('/api/qr');
+      const data = await res.json();
+
+      if (data.mode !== 'web') return; // Cloud API — não mostra QR
+
+      let modal = document.getElementById('qrModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'qrModal';
+        modal.style.cssText = `
+          position:fixed;top:0;left:0;right:0;bottom:0;
+          background:rgba(0,0,0,0.7);z-index:9999;
+          display:flex;align-items:center;justify-content:center;
+        `;
+        modal.innerHTML = `
+          <div style="background:#1a1a2e;border:1px solid #333;border-radius:16px;padding:32px;text-align:center;max-width:340px;width:90%;">
+            <div style="font-size:24px;margin-bottom:8px;">📱</div>
+            <h2 style="color:#fff;font-size:18px;margin:0 0 6px;">Conectar WhatsApp</h2>
+            <p style="color:#888;font-size:13px;margin:0 0 20px;">Escaneie o QR Code com seu celular para conectar</p>
+            <div id="qrImageWrap" style="background:#fff;border-radius:12px;padding:12px;display:inline-block;margin-bottom:16px;">
+              <img id="qrImage" src="" style="width:200px;height:200px;display:block;">
+            </div>
+            <p style="color:#555;font-size:11px;margin:0;">Abre o WhatsApp → Dispositivos conectados → Conectar dispositivo</p>
+          </div>
+        `;
+        document.body.appendChild(modal);
+      }
+
+      if (data.status === 'qr' && data.qr) {
+        modal.style.display = 'flex';
+        document.getElementById('qrImage').src = data.qr;
+      } else if (data.status === 'connected') {
+        if (modal) modal.remove();
+        if (qrInterval) { clearInterval(qrInterval); qrInterval = null; }
+        console.log('[WhatsApp Web] Conectado!');
+      } else {
+        // disconnected — ainda aguardando QR
+        if (data.qr) {
+          modal.style.display = 'flex';
+          document.getElementById('qrImage').src = data.qr;
+        }
+      }
+    } catch {}
+  }
+
+  // Verifica logo ao carregar e depois a cada 3s
+  checkQR();
+  qrInterval = setInterval(checkQR, 3000);
+})();
 fetch('/api/script').then(r=>r.json()).then(({script}) => {
   if (script) document.getElementById('scriptTextarea').value = script;
 });

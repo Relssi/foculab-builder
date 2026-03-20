@@ -5,7 +5,7 @@ const WebSocket = require('ws');
 const path = require('path');
 const multer = require('multer');
 const conversationManager = require('./src/conversation-manager');
-const whatsappApi = require('./src/whatsapp-api');
+const whatsappApi = require('./src/whatsapp-adapter');
 
 const app = express();
 const server = http.createServer(app);
@@ -44,6 +44,13 @@ if (process.env.DEMO === 'true') {
   conversationManager.seedDemo();
 }
 
+// ─── WhatsApp Web mode: inicia cliente com QR Code ───────────────────────────
+if (whatsappApi.MODE === 'web') {
+  whatsappApi.initWebClient(async (from, contactName, content) => {
+    await conversationManager.handleIncoming(from, contactName, content);
+  });
+}
+
 wss.on('connection', (ws) => {
   operators.add(ws);
   // Envia estado atual das conversas ao conectar
@@ -74,6 +81,13 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => operators.delete(ws));
+});
+
+// ─── WhatsApp Web: QR Code e status ─────────────────────────────────────────
+app.get('/api/qr', (req, res) => {
+  const qr = whatsappApi.getQR();
+  const status = whatsappApi.getWebStatus();
+  res.json({ qr, status, mode: whatsappApi.MODE });
 });
 
 // ─── WhatsApp Webhook: verificação ──────────────────────────────────────────
@@ -143,8 +157,12 @@ app.post('/api/send-image', upload.single('image'), async (req, res) => {
     const { phone, caption } = req.body;
     if (!req.file || !phone) return res.status(400).json({ error: 'phone e imagem obrigatórios' });
 
-    const mediaId = await whatsappApi.uploadMedia(req.file.buffer, req.file.mimetype);
-    await whatsappApi.sendImage(phone, mediaId, caption || '');
+    if (whatsappApi.MODE === 'web') {
+      await whatsappApi.sendImage(phone, req.file.buffer, req.file.mimetype, caption || '');
+    } else {
+      const mediaId = await whatsappApi.uploadMedia(req.file.buffer, req.file.mimetype);
+      await whatsappApi.sendImage(phone, mediaId, caption || '');
+    }
     conversationManager.addOperatorMessage(phone, `[Imagem enviada: ${req.file.originalname}]`);
     broadcast('update', conversationManager.getAllConversations());
     res.json({ ok: true });
