@@ -29,6 +29,11 @@ function broadcast(event, data) {
 
 conversationManager.setBroadcast(broadcast);
 
+// Seed de demonstração (ativa com DEMO=true no .env)
+if (process.env.DEMO === 'true') {
+  conversationManager.seedDemo();
+}
+
 wss.on('connection', (ws) => {
   operators.add(ws);
   // Envia estado atual das conversas ao conectar
