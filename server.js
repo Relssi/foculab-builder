@@ -15,7 +15,17 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 16 
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Dashboard WhatsApp AI → rota principal
 app.use(express.static(path.join(__dirname, 'dashboard')));
+
+// Carrossel Builder — assets (js, css) servidos da raiz sem expor index
+app.use(express.static(__dirname, { index: false }));
+
+// Rota explícita para o Carrossel Builder
+app.get('/carrossel', (req, res) => {
+  res.sendFile(path.join(__dirname, 'carrossel.html'));
+});
 
 // ─── WebSocket: broadcast para todos os operadores ──────────────────────────
 const operators = new Set();
