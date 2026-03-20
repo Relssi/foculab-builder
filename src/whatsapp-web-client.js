@@ -10,6 +10,20 @@
 
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
+const { execSync } = require('child_process');
+
+function findChromiumPath() {
+  if (process.env.CHROME_PATH) return process.env.CHROME_PATH;
+  const candidates = ['chromium', 'chromium-browser', 'google-chrome', 'google-chrome-stable'];
+  for (const name of candidates) {
+    try {
+      const p = execSync(`which ${name} 2>/dev/null`).toString().trim();
+      if (p) { console.log(`[WhatsApp Web] Chromium encontrado: ${p}`); return p; }
+    } catch {}
+  }
+  console.warn('[WhatsApp Web] Chromium não encontrado no PATH — puppeteer usará bundled');
+  return undefined;
+}
 
 let client = null;
 let qrDataUrl = null;
@@ -23,9 +37,7 @@ function init(onMessage) {
     authStrategy: new LocalAuth({ dataPath: './.wwebjs_auth' }),
     puppeteer: {
       headless: true,
-      // CHROME_PATH permite usar o Chromium do sistema (necessário em VPS/servidores)
-      // Ex: CHROME_PATH=/usr/bin/chromium-browser  ou  /usr/bin/google-chrome
-      ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}),
+      ...(findChromiumPath() ? { executablePath: findChromiumPath() } : {}),
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',

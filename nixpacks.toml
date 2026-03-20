@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["nodejs_20", "ffmpeg"]
+nixPkgs = ["nodejs_20", "ffmpeg", "chromium", "nss", "nspr", "atk", "cups", "libdrm", "dbus", "libxkbcommon", "xorg.libXcomposite", "xorg.libXdamage", "xorg.libXrandr", "mesa"]
 
 [phases.install]
 cmds = ["npm install"]
