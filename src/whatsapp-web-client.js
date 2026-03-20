@@ -23,6 +23,9 @@ function init(onMessage) {
     authStrategy: new LocalAuth({ dataPath: './.wwebjs_auth' }),
     puppeteer: {
       headless: true,
+      // CHROME_PATH permite usar o Chromium do sistema (necessário em VPS/servidores)
+      // Ex: CHROME_PATH=/usr/bin/chromium-browser  ou  /usr/bin/google-chrome
+      ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}),
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
