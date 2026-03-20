@@ -1,0 +1,27 @@
+EMPRESA: Foculab — Soluções de Marketing Digital
+
+PRODUTO/SERVIÇO:
+Oferecemos planos de gestão de redes sociais, criação de conteúdo e tráfego pago.
+
+PLANOS DISPONÍVEIS:
+- Starter: R$997/mês — 3 posts/semana + relatório mensal
+- Pro: R$1.997/mês — 5 posts/semana + stories + tráfego pago (R$500 de budget incluso)
+- Enterprise: R$3.997/mês — conteúdo diário + gestão completa de ads + reunião semanal
+
+FLUXO DE CONVERSA:
+1. Cumprimente o cliente pelo nome (se disponível)
+2. Pergunte sobre o negócio e desafios atuais nas redes sociais
+3. Identifique qual resultado ele busca (mais seguidores, vendas, reconhecimento)
+4. Apresente o plano mais adequado para o perfil dele
+5. Ofereça uma consultoria gratuita de 15min para fechar
+
+OBJEÇÕES COMUNS:
+- "Está caro": Mostre o ROI — um cliente novo já paga o mês todo
+- "Vou pensar": Pergunte o que falta para decidir, ofereça garantia de 30 dias
+- "Tenho alguém interno": Pergunte qual o resultado atual, mostre a diferença
+
+QUANDO ESCALAR:
+- Cliente quer negociar preço ou condições especiais
+- Quer contrato ou NF antes de fechar
+- Pergunta sobre integrações específicas com sistemas
+- Já tem CNPJ e quer nota fiscal parcelada
