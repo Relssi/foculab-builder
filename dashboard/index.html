@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#111111">
+<title>WhatsApp AI — Foculab</title>
+<style>
+:root {
+  --bg: #0a0a0a;
+  --surface: #111;
+  --surface2: #181818;
+  --surface3: #222;
+  --border: #2a2a2a;
+  --orange: #e85d26;
+  --orange2: #ff7340;
+  --white: #f2f0eb;
+  --muted: #666;
+  --green: #25d366;
+  --green2: #1da851;
+  --red: #e05555;
+  --blue: #4a9eff;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { height: 100%; height: -webkit-fill-available; }
+body {
+  height: 100vh;
+  height: -webkit-fill-available;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--white);
+  font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+}
+
+/* ── APP SHELL ─────────────────────────────────────────── */
+.app {
+  display: flex;
+  height: 100%;
+  position: relative;
+}
+
+/* ── SIDEBAR / LIST PANEL ──────────────────────────────── */
+.sidebar {
+  width: 360px;
+  min-width: 360px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: transform .25s ease;
+  z-index: 10;
+}
+
+/* ── MAIN / CHAT PANEL ─────────────────────────────────── */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+}
+
+/* ── TOPBAR ────────────────────────────────────────────── */
+.topbar {
+  padding: 12px 16px;
+  padding-top: calc(12px + var(--safe-top));
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.logo { font-weight: 800; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.logo-dot { width: 9px; height: 9px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; }
+.status-badge { margin-left: auto; font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.ws-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--red); flex-shrink: 0; }
+.ws-dot.connected { background: var(--green); }
+
+/* back button (mobile only) */
+.back-btn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--orange);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+/* ── SEARCH + TABS ─────────────────────────────────────── */
+.sidebar-header { padding: 12px 14px 0; flex-shrink: 0; }
+.search {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: var(--white);
+  font-size: 13px;
+  outline: none;
+  margin-bottom: 10px;
+}
+.search:focus { border-color: var(--orange); }
+
+.tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.tab {
+  flex: 1;
+  padding: 9px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  transition: .15s;
+}
+.tab.active { color: var(--orange); border-bottom-color: var(--orange); }
+
+/* ── CONVERSATION LIST ─────────────────────────────────── */
+.conv-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.conv-list::-webkit-scrollbar { width: 3px; }
+.conv-list::-webkit-scrollbar-thumb { background: var(--border); }
+
+.conv-item {
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  position: relative;
+  transition: background .1s;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.conv-item:active { background: var(--surface3); }
+.conv-item.active { background: var(--surface2); border-left: 3px solid var(--orange); }
+.conv-item.escalated { border-left: 3px solid var(--red); }
+
+.conv-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--surface3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.conv-body { flex: 1; min-width: 0; }
+.conv-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
+.conv-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+.conv-time { font-size: 10px; color: var(--muted); flex-shrink: 0; }
+.conv-bottom { display: flex; align-items: center; justify-content: space-between; }
+.conv-preview { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+.unread-dot {
+  width: 18px;
+  height: 18px;
+  background: var(--orange);
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-left: 6px;
+}
+.badge-ai { background: rgba(74,158,255,.15); color: var(--blue); }
+.badge-escalated { background: rgba(224,85,85,.15); color: var(--red); }
+.badge-human { background: rgba(37,211,102,.15); color: var(--green); }
+
+/* ── SCRIPT PANEL (sidebar bottom) ─────────────────────── */
+.script-panel {
+  padding: 12px 14px;
+  padding-bottom: calc(12px + var(--safe-bottom));
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.script-panel h4 { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 7px; }
+.script-textarea {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--white);
+  font-family: inherit;
+  font-size: 12px;
+  resize: none;
+  height: 80px;
+  outline: none;
+  -webkit-overflow-scrolling: touch;
+}
+.script-textarea:focus { border-color: var(--orange); }
+.script-save-row { display: flex; justify-content: flex-end; margin-top: 7px; }
+
+/* ── CHAT HEADER ───────────────────────────────────────── */
+.chat-header {
+  padding: 10px 14px;
+  padding-top: calc(10px + var(--safe-top));
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.chat-avatar { width: 38px; height: 38px; background: var(--surface3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.chat-info { flex: 1; min-width: 0; }
+.chat-name { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-sub { font-size: 11px; color: var(--muted); }
+.chat-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* ── LEAD BAR ──────────────────────────────────────────── */
+.lead-bar {
+  padding: 8px 14px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.lead-pill { font-size: 11px; color: var(--muted); }
+.lead-pill strong { color: var(--white); }
+
+/* ── ESCALATION ALERT ──────────────────────────────────── */
+.escalation-alert {
+  margin: 10px 12px;
+  padding: 11px 13px;
+  background: rgba(224,85,85,.08);
+  border: 1px solid rgba(224,85,85,.3);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.escalation-alert h4 { font-size: 12px; font-weight: 700; color: var(--red); margin-bottom: 5px; }
+.escalation-alert p { font-size: 11px; color: var(--muted); line-height: 1.5; }
+.escalation-summary { margin-top: 7px; padding: 7px 9px; background: var(--surface3); border-radius: 6px; font-size: 11px; line-height: 1.5; }
+
+/* ── MESSAGES ──────────────────────────────────────────── */
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.messages::-webkit-scrollbar { width: 3px; }
+.messages::-webkit-scrollbar-thumb { background: var(--border); }
+
+.msg {
+  max-width: 78%;
+  padding: 9px 12px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+.msg-client {
+  background: var(--surface2);
+  border-radius: 14px 14px 14px 3px;
+  align-self: flex-start;
+}
+.msg-assistant {
+  background: rgba(37,211,102,.09);
+  border: 1px solid rgba(37,211,102,.18);
+  border-radius: 14px 14px 3px 14px;
+  align-self: flex-end;
+}
+.msg-system {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  align-self: center;
+  padding: 5px 12px;
+  max-width: 90%;
+  text-align: center;
+}
+.msg-tag { font-size: 9px; font-weight: 700; text-transform: uppercase; margin-bottom: 3px; display: block; }
+.msg-tag-ai { color: var(--blue); }
+.msg-tag-op { color: var(--green); }
+.msg-time { font-size: 10px; color: var(--muted); margin-top: 4px; display: block; }
+
+/* ── INPUT AREA ────────────────────────────────────────── */
+.input-area {
+  padding: 10px 12px;
+  padding-bottom: calc(10px + var(--safe-bottom));
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.attach-row { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+.attach-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 11px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.attach-btn:active { border-color: var(--orange); color: var(--orange); }
+
+.input-row { display: flex; gap: 8px; align-items: flex-end; }
+.input-box {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 10px 14px;
+  color: var(--white);
+  font-size: 13px;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  min-height: 40px;
+  max-height: 100px;
+  line-height: 1.4;
+}
+.input-box:focus { border-color: var(--orange); }
+.input-box:disabled { opacity: .4; }
+
+.send-btn {
+  width: 40px;
+  height: 40px;
+  background: var(--green);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 17px;
+  transition: .15s;
+}
+.send-btn:active { background: var(--green2); transform: scale(.94); }
+
+.ai-mode-msg {
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 8px;
+}
+
+/* ── BUTTONS ───────────────────────────────────────────── */
+.btn {
+  padding: 7px 13px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: .15s;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-sm { padding: 6px 11px; font-size: 11px; }
+.btn-green { background: var(--green); color: #fff; }
+.btn-green:active { background: var(--green2); }
+.btn-orange { background: var(--orange); color: #fff; }
+.btn-orange:active { background: var(--orange2); }
+.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+.btn-ghost:active { border-color: var(--white); color: var(--white); }
+.btn-red { background: rgba(224,85,85,.12); border: 1px solid rgba(224,85,85,.3); color: var(--red); }
+
+/* ── EMPTY STATE ───────────────────────────────────────── */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  gap: 12px;
+  padding: 20px;
+}
+.empty-state .icon { font-size: 52px; opacity: .25; }
+.empty-state p { font-size: 13px; text-align: center; }
+
+/* ── NOTIFICATIONS ─────────────────────────────────────── */
+.notif-stack {
+  position: fixed;
+  top: 16px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 999;
+  max-width: calc(100vw - 24px);
+}
+.notif {
+  padding: 11px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 12px;
+  width: 280px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.6);
+  animation: slideIn .2s ease;
+}
+.notif-alert { border-color: var(--red); }
+.notif-title { font-weight: 700; margin-bottom: 3px; color: var(--red); }
+.notif-ok .notif-title { color: var(--green); }
+.notif-body { color: var(--muted); font-size: 11px; }
+
+/* ── RESPONSIVE — MOBILE ───────────────────────────────── */
+@media (max-width: 700px) {
+  .sidebar {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 100%;
+    min-width: unset;
+    transform: translateX(0);
+  }
+  .sidebar.hidden {
+    transform: translateX(-100%);
+  }
+  .main {
+    position: absolute;
+    left: 0; top: 0; right: 0; bottom: 0;
+    transform: translateX(100%);
+    transition: transform .25s ease;
+  }
+  .main.visible {
+    transform: translateX(0);
+  }
+  .back-btn { display: flex; }
+  .msg { max-width: 88%; }
+  .notif { width: calc(100vw - 24px); }
+  .conv-preview { max-width: 55vw; }
+}
+
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+@keyframes slideIn { from { opacity:0; transform:translateX(16px); } to { opacity:1; transform:translateX(0); } }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ══ SIDEBAR ══════════════════════════════════════════ -->
+  <div class="sidebar" id="sidebar">
+    <div class="topbar">
+      <div class="logo">
+        <div class="logo-dot"></div>
+        WhatsApp AI
+      </div>
+      <div class="status-badge">
+        <div class="ws-dot" id="wsDot"></div>
+        <span id="wsStatus">Conectando...</span>
+      </div>
+      <a href="/carrossel" target="_blank" title="Carrossel Builder" style="margin-left:8px;display:flex;align-items:center;gap:5px;padding:5px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--muted);font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;">
+        🎨 Carrossel
+      </a>
+    </div>
+
+    <div class="sidebar-header">
+      <input class="search" type="search" placeholder="Buscar conversa..." id="searchInput" autocomplete="off">
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="all">Todas</div>
+      <div class="tab" data-tab="escalated">🔴 Alerta</div>
+      <div class="tab" data-tab="human">✅ Humano</div>
+    </div>
+
+    <div class="conv-list" id="convList">
+      <div style="padding:24px;text-align:center;color:var(--muted);font-size:12px;">Aguardando conexão...</div>
+    </div>
+
+    <div class="script-panel">
+      <h4>Script de Vendas (IA)</h4>
+      <textarea class="script-textarea" id="scriptTextarea" placeholder="Cole aqui o script de vendas para a IA seguir..."></textarea>
+      <div class="script-save-row">
+        <button class="btn btn-orange btn-sm" onclick="saveScript()">Salvar Script</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MAIN ═════════════════════════════════════════════ -->
+  <div class="main" id="main">
+    <div id="emptyState" class="empty-state">
+      <div class="icon">💬</div>
+      <p>Selecione uma conversa na lista</p>
+    </div>
+
+    <div id="chatView" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <!-- Header -->
+      <div class="chat-header" id="chatHeader">
+        <button class="back-btn" onclick="goBack()">‹ Voltar</button>
+        <div class="chat-avatar" id="chatAvatar">👤</div>
+        <div class="chat-info">
+          <div class="chat-name" id="chatName">—</div>
+          <div class="chat-sub" id="chatSub">—</div>
+        </div>
+        <div class="chat-actions" id="chatActions"></div>
+      </div>
+
+      <!-- Lead bar -->
+      <div class="lead-bar" id="leadBar" style="display:none;"></div>
+
+      <!-- Escalation alert -->
+      <div id="escalationAlert"></div>
+
+      <!-- Messages -->
+      <div class="messages" id="messages"></div>
+
+      <!-- Input -->
+      <div class="input-area" id="inputArea">
+        <div id="aiModeMsg" class="ai-mode-msg" style="display:none;">
+          👀 IA está respondendo — assuma o controle para enviar mensagens
+        </div>
+        <div id="inputControls" style="display:none;">
+          <div class="attach-row">
+            <label class="attach-btn">
+              🖼️ Imagem
+              <input type="file" accept="image/*" style="display:none;" onchange="sendImage(this)">
+            </label>
+            <label class="attach-btn">
+              🎙️ Áudio (voz)
+              <input type="file" accept="audio/*" style="display:none;" onchange="sendAudio(this)">
+            </label>
+          </div>
+          <div class="input-row">
+            <textarea
+              class="input-box"
+              id="msgInput"
+              placeholder="Mensagem..."
+              rows="1"
+              onkeydown="handleKey(event)"
+              oninput="autoResize(this)"
+            ></textarea>
+            <button class="send-btn" onclick="sendText()">➤</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="notif-stack" id="notifStack"></div>
+
+<script>
+// ── State ────────────────────────────────────────────────
+let ws = null;
+let conversations = {};
+let activePhone = null;
+let currentTab = 'all';
+const OPERATOR_ID = 'op-' + Math.random().toString(36).slice(2,7);
+const isMobile = () => window.innerWidth <= 700;
+
+// ── WebSocket ────────────────────────────────────────────
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${proto}//${location.host}`);
+
+  ws.onopen = () => {
+    document.getElementById('wsDot').classList.add('connected');
+    document.getElementById('wsStatus').textContent = 'Online';
+  };
+  ws.onclose = () => {
+    document.getElementById('wsDot').classList.remove('connected');
+    document.getElementById('wsStatus').textContent = 'Reconectando...';
+    setTimeout(connectWS, 3000);
+  };
+  ws.onmessage = ({ data }) => {
+    const { event, data: d } = JSON.parse(data);
+    if (event === 'init' || event === 'update') {
+      d.forEach(c => conversations[c.phone] = c);
+      renderConvList();
+      if (activePhone) renderChat(activePhone);
+    }
+    if (event === 'escalated') {
+      showNotif(`🚨 Suporte: ${d.name}`, d.reason, 'alert');
+      playAlert();
+    }
+    if (event === 'message' && (d.mode === 'escalated' || d.mode === 'human')) {
+      if (activePhone !== d.phone) showNotif(`📩 ${d.name}`, d.content?.text || '[mídia]', 'alert');
+    }
+  };
+}
+
+// ── Render list ──────────────────────────────────────────
+function renderConvList() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  let list = Object.values(conversations).sort((a,b) => new Date(b.updatedAt)-new Date(a.updatedAt));
+
+  if (currentTab === 'escalated') list = list.filter(c => c.mode === 'escalated');
+  else if (currentTab === 'human') list = list.filter(c => c.mode === 'human');
+  if (search) list = list.filter(c => c.name.toLowerCase().includes(search) || c.phone.includes(search));
+
+  const el = document.getElementById('convList');
+  if (!list.length) {
+    el.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);font-size:12px;">Nenhuma conversa</div>`;
+    return;
+  }
+
+  el.innerHTML = list.map(c => {
+    const last = c.messages[c.messages.length - 1];
+    const preview = last ? (last.content?.text || `[${last.content?.type || 'mídia'}]`) : '';
+    const time = c.updatedAt ? new Date(c.updatedAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
+    const isActive = activePhone === c.phone;
+    const cls = [isActive?'active':'', c.mode==='escalated'?'escalated':''].filter(Boolean).join(' ');
+    const unread = c.unreadByOperator > 0 ? `<div class="unread-dot">${c.unreadByOperator}</div>` : '';
+
+    return `<div class="conv-item ${cls}" onclick="selectConv('${esc(c.phone)}')">
+      <div class="conv-avatar">${avatarChar(c.name)}</div>
+      <div class="conv-body">
+        <div class="conv-top">
+          <div class="conv-name">${esc(c.name)}${badgeHtml(c.mode)}</div>
+          <div class="conv-time">${time}</div>
+        </div>
+        <div class="conv-bottom">
+          <div class="conv-preview">${esc(preview.substring(0,60))}</div>
+          ${unread}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Select & navigate ────────────────────────────────────
+function selectConv(phone) {
+  activePhone = phone;
+  if (conversations[phone]) conversations[phone].unreadByOperator = 0;
+
+  if (isMobile()) {
+    document.getElementById('sidebar').classList.add('hidden');
+    document.getElementById('main').classList.add('visible');
+  }
+
+  const emptyState = document.getElementById('emptyState');
+  const chatView = document.getElementById('chatView');
+  emptyState.style.display = 'none';
+  chatView.style.display = 'flex';
+
+  renderConvList();
+  renderChat(phone);
+}
+
+function goBack() {
+  document.getElementById('sidebar').classList.remove('hidden');
+  document.getElementById('main').classList.remove('visible');
+  activePhone = null;
+}
+
+// ── Render chat ──────────────────────────────────────────
+function renderChat(phone) {
+  const c = conversations[phone];
+  if (!c || activePhone !== phone) return;
+
+  document.getElementById('chatName').textContent = c.name;
+  document.getElementById('chatSub').textContent = c.phone + ' · ' + modeLabel(c.mode);
+
+  // Actions button
+  const actions = document.getElementById('chatActions');
+  if (c.mode === 'ai') {
+    actions.innerHTML = `<button class="btn btn-red btn-sm" onclick="takeover('${esc(phone)}')">Assumir</button>`;
+  } else if (c.mode === 'escalated') {
+    actions.innerHTML = `<button class="btn btn-green btn-sm" onclick="takeover('${esc(phone)}')">Assumir</button>`;
+  } else {
+    actions.innerHTML = `<button class="btn btn-ghost btn-sm" onclick="release('${esc(phone)}')">Devolver IA</button>`;
+  }
+
+  // Lead bar
+  const leadBar = document.getElementById('leadBar');
+  if (c.leadStage) {
+    leadBar.style.display = 'flex';
+    leadBar.innerHTML = `
+      <div class="lead-pill">Estágio: <strong>${stageLabel(c.leadStage)}</strong></div>
+      ${c.leadNotes ? `<div class="lead-pill">Nota: <strong>${esc(c.leadNotes)}</strong></div>` : ''}`;
+  } else leadBar.style.display = 'none';
+
+  // Escalation alert
+  const alertEl = document.getElementById('escalationAlert');
+  if (c.mode === 'escalated' && c.escalateReason) {
+    alertEl.innerHTML = `<div class="escalation-alert">
+      <h4>🚨 IA solicitou suporte humano</h4>
+      <p><strong>Motivo:</strong> ${esc(c.escalateReason)}</p>
+      ${c.escalateSummary ? `<div class="escalation-summary"><strong>Resumo:</strong><br>${esc(c.escalateSummary)}</div>` : ''}
+    </div>`;
+  } else alertEl.innerHTML = '';
+
+  // Messages
+  const msgsEl = document.getElementById('messages');
+  msgsEl.innerHTML = c.messages.map(renderMsg).join('');
+  msgsEl.scrollTop = msgsEl.scrollHeight;
+
+  // Input controls
+  const aiMsg = document.getElementById('aiModeMsg');
+  const ctrl = document.getElementById('inputControls');
+  if (c.mode === 'human') { aiMsg.style.display='none'; ctrl.style.display='block'; }
+  else { aiMsg.style.display='block'; ctrl.style.display='none'; }
+}
+
+function renderMsg(m) {
+  const time = m.ts ? new Date(m.ts).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
+  if (m.role === 'client') {
+    let body = '';
+    if (m.content.type === 'text') body = esc(m.content.text);
+    else if (m.content.type === 'image') body = `🖼️ Imagem${m.content.caption ? ': '+esc(m.content.caption) : ''}`;
+    else if (m.content.type === 'audio') body = '🎙️ Mensagem de voz';
+    else body = `[${m.content.type}]`;
+    return `<div class="msg msg-client">${body}<span class="msg-time">${time}</span></div>`;
+  }
+  if (m.role === 'assistant') {
+    const tag = m.fromAI === false
+      ? '<span class="msg-tag msg-tag-op">Operador</span>'
+      : '<span class="msg-tag msg-tag-ai">IA</span>';
+    const body = m.content.type === 'operator' ? esc(m.content.text) : (esc(m.content.text) || `[${m.content.type}]`);
+    return `<div class="msg msg-assistant">${tag}${body}<span class="msg-time">${time}</span></div>`;
+  }
+  return `<div class="msg msg-system">${esc(m.content?.text || '')}</div>`;
+}
+
+// ── Actions ──────────────────────────────────────────────
+function takeover(phone) { ws.send(JSON.stringify({action:'takeover',phone,operatorId:OPERATOR_ID})); }
+function release(phone) { ws.send(JSON.stringify({action:'release',phone})); }
+
+function sendText() {
+  if (!activePhone) return;
+  const input = document.getElementById('msgInput');
+  const text = input.value.trim();
+  if (!text) return;
+  ws.send(JSON.stringify({action:'send',phone:activePhone,text}));
+  input.value = '';
+  autoResize(input);
+}
+
+function handleKey(e) {
+  // Desktop: Enter envia, Shift+Enter nova linha
+  if (e.key === 'Enter' && !e.shiftKey && !isMobile()) {
+    e.preventDefault();
+    sendText();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+async function sendImage(input) {
+  if (!input.files[0] || !activePhone) return;
+  const form = new FormData();
+  form.append('phone', activePhone);
+  form.append('image', input.files[0]);
+  try {
+    const res = await fetch('/api/send-image', {method:'POST',body:form});
+    if (!res.ok) throw new Error(await res.text());
+    showNotif('✅ Imagem enviada', '', 'ok');
+  } catch(e) { showNotif('Erro', e.message, 'alert'); }
+  input.value = '';
+}
+
+async function sendAudio(input) {
+  if (!input.files[0] || !activePhone) return;
+  const form = new FormData();
+  form.append('phone', activePhone);
+  form.append('audio', input.files[0]);
+  try {
+    const res = await fetch('/api/send-audio', {method:'POST',body:form});
+    if (!res.ok) throw new Error(await res.text());
+    showNotif('✅ Áudio de voz enviado', 'Aparece como PTT no WhatsApp', 'ok');
+  } catch(e) { showNotif('Erro', e.message, 'alert'); }
+  input.value = '';
+}
+
+async function saveScript() {
+  const script = document.getElementById('scriptTextarea').value.trim();
+  if (!script) return;
+  await fetch('/api/script',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({script})});
+  showNotif('✅ Script salvo', 'IA vai usar nas próximas mensagens', 'ok');
+}
+
+// ── Tabs ─────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentTab = tab.dataset.tab;
+    renderConvList();
+  });
+});
+document.getElementById('searchInput').addEventListener('input', renderConvList);
+
+// ── Notifications ─────────────────────────────────────────
+function showNotif(title, body, type='ok') {
+  const stack = document.getElementById('notifStack');
+  const div = document.createElement('div');
+  div.className = 'notif ' + (type==='alert' ? 'notif-alert' : 'notif-ok');
+  div.innerHTML = `<div class="notif-title">${esc(title)}</div>${body?`<div class="notif-body">${esc(body.substring(0,80))}</div>`:''}`;
+  stack.appendChild(div);
+  setTimeout(() => div.remove(), 5000);
+}
+
+function playAlert() {
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + .4);
+    osc.start(); osc.stop(ctx.currentTime + .4);
+  } catch {}
+}
+
+// ── Helpers ──────────────────────────────────────────────
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function avatarChar(name) { return name ? name.charAt(0).toUpperCase() : '?'; }
+function badgeHtml(mode) {
+  const map = { ai:'<span class="badge badge-ai">IA</span>', escalated:'<span class="badge badge-escalated">🔴</span>', human:'<span class="badge badge-human">✅</span>' };
+  return map[mode] || '';
+}
+function modeLabel(mode) {
+  return { ai:'IA respondendo', escalated:'Aguardando operador', human:'Você está atendendo' }[mode] || mode;
+}
+function stageLabel(s) {
+  return { curiosidade:'🔍 Curiosidade', interesse:'👀 Interesse', consideracao:'🤔 Consideração', decisao:'💰 Decisão', 'pos-venda':'✅ Pós-venda', desqualificado:'❌ Desqualificado' }[s] || s;
+}
+
+// ── Init ─────────────────────────────────────────────────
+connectWS();
+
+// ─── WhatsApp Web QR Code ─────────────────────────────────────────────────────
+(function() {
+  let qrInterval = null;
+
+  async function checkQR() {
+    try {
+      const res = await fetch('/api/qr');
+      const data = await res.json();
+
+      if (data.mode !== 'web') return; // Cloud API — não mostra QR
+
+      let modal = document.getElementById('qrModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'qrModal';
+        modal.style.cssText = `
+          position:fixed;top:0;left:0;right:0;bottom:0;
+          background:rgba(0,0,0,0.7);z-index:9999;
+          display:flex;align-items:center;justify-content:center;
+        `;
+        modal.innerHTML = `
+          <div style="background:#1a1a2e;border:1px solid #333;border-radius:16px;padding:32px;text-align:center;max-width:340px;width:90%;">
+            <div style="font-size:24px;margin-bottom:8px;">📱</div>
+            <h2 style="color:#fff;font-size:18px;margin:0 0 6px;">Conectar WhatsApp</h2>
+            <p style="color:#888;font-size:13px;margin:0 0 20px;">Escaneie o QR Code com seu celular para conectar</p>
+            <div id="qrImageWrap" style="background:#fff;border-radius:12px;padding:12px;display:inline-block;margin-bottom:16px;">
+              <img id="qrImage" src="" style="width:200px;height:200px;display:block;">
+            </div>
+            <p style="color:#555;font-size:11px;margin:0;">Abre o WhatsApp → Dispositivos conectados → Conectar dispositivo</p>
+          </div>
+        `;
+        document.body.appendChild(modal);
+      }
+
+      if (data.status === 'qr' && data.qr) {
+        modal.style.display = 'flex';
+        document.getElementById('qrImage').src = data.qr;
+      } else if (data.status === 'connected') {
+        if (modal) modal.remove();
+        if (qrInterval) { clearInterval(qrInterval); qrInterval = null; }
+        console.log('[WhatsApp Web] Conectado!');
+      } else {
+        // disconnected — ainda aguardando QR
+        if (data.qr) {
+          modal.style.display = 'flex';
+          document.getElementById('qrImage').src = data.qr;
+        }
+      }
+    } catch {}
+  }
+
+  // Verifica logo ao carregar e depois a cada 3s
+  checkQR();
+  qrInterval = setInterval(checkQR, 3000);
+})();
+fetch('/api/script').then(r=>r.json()).then(({script}) => {
+  if (script) document.getElementById('scriptTextarea').value = script;
+});
+</script>
+</body>
+</html>
