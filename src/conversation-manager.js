@@ -141,7 +141,7 @@ async function processWithAI(conv) {
     if (broadcastFn) broadcastFn('update', getAllConversations());
 
   } catch (err) {
-    console.error(`[ConvManager] Erro ao processar IA para ${conv.phone}:`, err.message);
+    console.error(`[ConvManager] Erro ao processar IA para ${conv.phone}:`, err.message, JSON.stringify(err.error || ''));
     await escalate(conv, `Erro técnico: ${err.message}`);
   }
 }

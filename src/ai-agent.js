@@ -116,7 +116,7 @@ async function processMessage(conversation, salesScript) {
     };
 
   } catch (err) {
-    console.error('[AI] Erro ao processar:', err.message, err.response?.data || err.status || '');
+    console.error('[AI] Erro ao processar:', err.message, JSON.stringify(err.error || err.response?.data || ''));
     // Fallback seguro — escala para humano se a IA falhar
     return {
       messages: [],
