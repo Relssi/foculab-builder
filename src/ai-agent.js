@@ -91,9 +91,12 @@ async function processMessage(conversation, salesScript) {
   // Garante que começa com user e alterna corretamente
   const cleanMessages = normalizeMessageHistory(messages);
 
+  const model = process.env.AI_MODEL || 'claude-3-5-sonnet-20241022';
+  console.log(`[AI] Chamando modelo=${model} messages=${cleanMessages.length}`);
+
   try {
     const response = await client.messages.create({
-      model: process.env.AI_MODEL || 'claude-sonnet-4-6',
+      model,
       max_tokens: 1024,
       system: systemPrompt,
       messages: cleanMessages,
@@ -116,7 +119,7 @@ async function processMessage(conversation, salesScript) {
     };
 
   } catch (err) {
-    console.error('[AI] Erro ao processar:', err.message, JSON.stringify(err.error || err.response?.data || ''));
+    console.error('[AI] Erro ao processar:', err.message, JSON.stringify(err.error || err.response?.data || {}), 'status:', err.status);
     // Fallback seguro — escala para humano se a IA falhar
     return {
       messages: [],
